@@ -1,0 +1,40 @@
+@Pacientes.Api_HostAddress = http://localhost:5041
+
+GET {{Pacientes.Api_HostAddress}}/api/Pacientes
+Accept: application/json
+
+###
+
+GET {{Pacientes.Api_HostAddress}}/api/Pacientes/1
+Accept: application/json
+
+###
+
+POST {{Pacientes.Api_HostAddress}}/api/Pacientes
+Content-Type: application/json
+
+{
+  "cedula_pac": "1234567890",
+  "nombre_pac": "Juan",
+  "apellido_pac": "Pérez",
+  "direccion_pac": "Av. Principal 123"
+}
+
+###
+
+PUT {{Pacientes.Api_HostAddress}}/api/Pacientes/1
+Content-Type: application/json
+
+{
+  "id_pac": 1,
+  "cedula_pac": "1234567890",
+  "nombre_pac": "Juan",
+  "apellido_pac": "Pérez",
+  "direccion_pac": "Av. Principal 456"
+}
+
+###
+
+DELETE {{Pacientes.Api_HostAddress}}/api/Pacientes/1
+
+###

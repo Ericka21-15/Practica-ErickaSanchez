@@ -1,0 +1,42 @@
+@Historial_Clinico.Api_HostAddress = http://localhost:5180
+
+GET {{Historial_Clinico.Api_HostAddress}}/api/HistorialClinico
+Accept: application/json
+
+###
+
+GET {{Historial_Clinico.Api_HostAddress}}/api/HistorialClinico/1
+Accept: application/json
+
+###
+
+POST {{Historial_Clinico.Api_HostAddress}}/api/HistorialClinico
+Content-Type: application/json
+
+{
+  "id_pac": 1,
+  "num_historia": 1001,
+  "diagnostico_pac": "Hipertensión arterial",
+  "tratamiento_pac": "Enalapril 10mg",
+  "fecha_his": "2026-08-19T22:00:00"
+}
+
+###
+
+PUT {{Historial_Clinico.Api_HostAddress}}/api/HistorialClinico/1
+Content-Type: application/json
+
+{
+  "id_histcl": 1,
+  "id_pac": 1,
+  "num_historia": 1001,
+  "diagnostico_pac": "Hipertensión controlada",
+  "tratamiento_pac": "Enalapril 10mg diario",
+  "fecha_his": "2026-08-19T22:00:00"
+}
+
+###
+
+DELETE {{Historial_Clinico.Api_HostAddress}}/api/HistorialClinico/1
+
+###

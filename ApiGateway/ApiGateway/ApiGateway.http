@@ -1,0 +1,22 @@
+# For more info on HTTP files go to https://aka.ms/vs/httpfile
+@ApiGateway = http://localhost:5091
+
+GET {{ApiGateway}}/api/pacientes
+Accept: application/json
+
+###
+POST {{ApiGateway}}/api/pacientes
+Content-Type: application/json
+
+{
+  "cedula_pac": "1234567890",
+  "nombre_pac": "Juan",
+  "apellido_pac": "Pérez",
+  "direccion_pac": "Av. Principal 123"
+}
+
+###
+GET {{ApiGateway}}/api/historialclinico
+Accept: application/json
+
+###

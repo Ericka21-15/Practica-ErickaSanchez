@@ -1,0 +1,140 @@
+services:
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: sqlserver-pacientes-compose
+    ports:
+      - "1433:1433"
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_SA_PASSWORD: "SqlServer123!"
+    volumes:
+      - sqlserver-data:/var/opt/mssql
+    healthcheck:
+      test: /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P "SqlServer123!" -C -Q "SELECT 1"
+      interval: 10s
+      timeout: 10s
+      retries: 20
+      start_period: 40s
+    networks:
+      - distribuidos-network
+
+  sql-init:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: sql-init-pacientes-compose
+    depends_on:
+      sqlserver:
+        condition: service_healthy
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_SA_PASSWORD: "SqlServer123!"
+    volumes:
+      - ./sql/init.sql:/scripts/init.sql:ro
+    entrypoint: ["/bin/bash", "-c"]
+    command:
+      - |
+        set -e
+        echo "Esperando a SQL Server..."
+        for i in $$(seq 1 30); do
+          if /opt/mssql-tools18/bin/sqlcmd -S sqlserver -U sa -P "$$MSSQL_SA_PASSWORD" -C -Q "SELECT 1" >/dev/null 2>&1; then
+            echo "SQL Server listo"
+            break
+          fi
+          echo "Intento $$i: SQL Server aún no acepta conexiones"
+          sleep 3
+        done
+        /opt/mssql-tools18/bin/sqlcmd -S sqlserver -U sa -P "$$MSSQL_SA_PASSWORD" -C -i /scripts/init.sql
+        echo "Bases de datos inicializadas"
+    restart: "no"
+    networks:
+      - distribuidos-network
+
+  rabbitmq:
+    image: rabbitmq:4-management
+    container_name: rabbitmq-pacientes-compose
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: admin
+      RABBITMQ_DEFAULT_PASS: admin123
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    networks:
+      - distribuidos-network
+
+  pacientes:
+    build:
+      context: ./Pacientes/Pacientes.Api
+      dockerfile: Dockerfile
+    container_name: pacientes-api-compose
+    ports:
+      - "5001:8080"
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ASPNETCORE_URLS: "http://+:8080"
+      ConnectionStrings__PacientesConnection: "Server=sqlserver,1433;Database=PacientesDB;User Id=usuario_pacientes;Password=1234;TrustServerCertificate=True;Encrypt=False;"
+      RabbitMQ__HostName: rabbitmq
+      RabbitMQ__Port: "5672"
+      RabbitMQ__UserName: admin
+      RabbitMQ__Password: admin123
+      RabbitMQ__QueueName: paciente_creado
+    depends_on:
+      sql-init:
+        condition: service_completed_successfully
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - distribuidos-network
+
+  historialclinico:
+    build:
+      context: ./Historial_Clinico/Historial_Clinico.Api
+      dockerfile: Dockerfile
+    container_name: historialclinico-api-compose
+    ports:
+      - "5002:8080"
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ASPNETCORE_URLS: "http://+:8080"
+      ConnectionStrings__HistorialClinicoConnection: "Server=sqlserver,1433;Database=Historial_ClinicoDB;User Id=usuario_historial;Password=1234;TrustServerCertificate=True;Encrypt=False;"
+      RabbitMQ__HostName: rabbitmq
+      RabbitMQ__Port: "5672"
+      RabbitMQ__UserName: admin
+      RabbitMQ__Password: admin123
+      RabbitMQ__QueueName: paciente_creado
+    depends_on:
+      sql-init:
+        condition: service_completed_successfully
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - distribuidos-network
+
+  apigateway:
+    build:
+      context: ./ApiGateway
+      dockerfile: Dockerfile
+    container_name: apigateway-pacientes-compose
+    ports:
+      - "5003:8080"
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ASPNETCORE_URLS: "http://+:8080"
+      ReverseProxy__Clusters__pacientesCluster__Destinations__pacientesDestination__Address: "http://pacientes:8080/"
+      ReverseProxy__Clusters__historialClinicoCluster__Destinations__historialClinicoDestination__Address: "http://historialclinico:8080/"
+    depends_on:
+      - pacientes
+      - historialclinico
+    networks:
+      - distribuidos-network
+
+networks:
+  distribuidos-network:
+    driver: bridge
+
+volumes:
+  sqlserver-data:
