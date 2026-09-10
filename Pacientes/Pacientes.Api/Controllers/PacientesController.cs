@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Pacientes.Api.Data;
@@ -8,6 +9,7 @@ namespace Pacientes.Api.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize]
     public class PacientesController : ControllerBase
     {
         private readonly PacientesDBContext _dbContext;
@@ -51,6 +53,7 @@ namespace Pacientes.Api.Controllers
                 paciente);
         }
 
+        [Authorize(Roles = "Administrador")]
         [HttpPut("{id}")]
         public async Task<IActionResult> ActualizarPaciente(int id, tbl_pacientes paciente)
         {
@@ -63,6 +66,7 @@ namespace Pacientes.Api.Controllers
             return NoContent();
         }
 
+        [Authorize(Roles = "Administrador")]
         [HttpDelete("{id}")]
         public async Task<IActionResult> EliminarPaciente(int id)
         {

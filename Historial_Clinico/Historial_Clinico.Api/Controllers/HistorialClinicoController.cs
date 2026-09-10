@@ -1,5 +1,6 @@
 using Historial_Clinico.Api.Data;
 using Historial_Clinico.Api.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -7,6 +8,7 @@ namespace Historial_Clinico.Api.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize]
     public class HistorialClinicoController : ControllerBase
     {
         private readonly HistorialClinicoDBContext _dbContext;
@@ -35,6 +37,7 @@ namespace Historial_Clinico.Api.Controllers
             return Ok(historial);
         }
 
+        [Authorize(Roles = "Administrador")]
         [HttpPost]
         public async Task<ActionResult<tbl_historial_clinico>> CrearHistorialClinico(tbl_historial_clinico historial)
         {
@@ -46,6 +49,7 @@ namespace Historial_Clinico.Api.Controllers
                 historial);
         }
 
+        [Authorize(Roles = "Administrador")]
         [HttpPut("{id}")]
         public async Task<IActionResult> ActualizarHistorialClinico(int id, tbl_historial_clinico historial)
         {
@@ -58,6 +62,7 @@ namespace Historial_Clinico.Api.Controllers
             return NoContent();
         }
 
+        [Authorize(Roles = "Administrador")]
         [HttpDelete("{id}")]
         public async Task<IActionResult> EliminarHistorialClinico(int id)
         {

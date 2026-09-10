@@ -4,8 +4,7 @@ builder.Services.AddReverseProxy().LoadFromConfig(builder.Configuration.GetSecti
 
 var app = builder.Build();
 
+app.MapGet("/health", () => Results.Ok(new { status = "ok", service = "ApiGateway" }));
 app.MapReverseProxy();
-
-//app.MapGet("/", ()=> "Hello World!");
 
 app.Run();

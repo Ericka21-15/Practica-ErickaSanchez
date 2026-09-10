@@ -1,0 +1,10 @@
+properties:
+  configuration:
+    ingress:
+      external: true
+      targetPort: 15672
+      transport: http
+      additionalPortMappings:
+        - targetPort: 5672
+          exposedPort: 5672
+          external: false

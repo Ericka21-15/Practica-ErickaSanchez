@@ -1,7 +1,4 @@
-using Historial_Clinico.Api.Data;
-using Historial_Clinico.Api.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi;
 using System.Text;
@@ -9,11 +6,6 @@ using System.Text;
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers();
-builder.Services.AddHostedService<RabbitMQConsumer>();
-
-builder.Services.AddDbContext<HistorialClinicoDBContext>(options =>
-    options.UseSqlServer(
-        builder.Configuration.GetConnectionString("HistorialClinicoConnection")));
 
 var jwtKey = builder.Configuration["Jwt:Key"];
 var jwtIssuer = builder.Configuration["Jwt:Issuer"];
@@ -44,7 +36,7 @@ builder.Services.AddSwaggerGen(options =>
         Type = SecuritySchemeType.Http,
         Scheme = "bearer",
         BearerFormat = "JWT",
-        Description = "Token JWT emitido por el servicio OAuthJWT"
+        Description = "Ingrese el token JWT emitido por OAuthJWT"
     });
 
     options.AddSecurityRequirement(document => new OpenApiSecurityRequirement
@@ -55,13 +47,7 @@ builder.Services.AddSwaggerGen(options =>
 
 var app = builder.Build();
 
-using (var scope = app.Services.CreateScope())
-{
-    var db = scope.ServiceProvider.GetRequiredService<HistorialClinicoDBContext>();
-    db.Database.EnsureCreated();
-}
-
-app.MapGet("/health", () => Results.Ok(new { status = "ok", service = "HistorialClinico" }));
+app.MapGet("/health", () => Results.Ok(new { status = "ok", service = "OAuthJWT" }));
 
 app.UseSwagger();
 app.UseSwaggerUI();

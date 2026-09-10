@@ -66,6 +66,27 @@ services:
     networks:
       - distribuidos-network
 
+  oauthjwt:
+    build:
+      context: ./OAuthJWT/OAuthJWT
+      dockerfile: Dockerfile
+    container_name: oauthjwt-pacientes-compose
+    ports:
+      - "5004:8080"
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ASPNETCORE_URLS: "http://+:8080"
+      Jwt__Key: "ClaveDemoOAuthJWT_Pacientes_AA2026_Min32Chars!!"
+      Jwt__Issuer: OAuthJWT
+      Jwt__Audience: ServiciosPacientes
+      Jwt__ExpireMinutes: "60"
+      Auth__AdminUser: admin
+      Auth__AdminPassword: "Admin1234!"
+      Auth__UserName: usuario
+      Auth__UserPassword: "Usuario1234!"
+    networks:
+      - distribuidos-network
+
   pacientes:
     build:
       context: ./Pacientes/Pacientes.Api
@@ -82,6 +103,9 @@ services:
       RabbitMQ__UserName: admin
       RabbitMQ__Password: admin123
       RabbitMQ__QueueName: paciente_creado
+      Jwt__Key: "ClaveDemoOAuthJWT_Pacientes_AA2026_Min32Chars!!"
+      Jwt__Issuer: OAuthJWT
+      Jwt__Audience: ServiciosPacientes
     depends_on:
       sql-init:
         condition: service_completed_successfully
@@ -106,6 +130,9 @@ services:
       RabbitMQ__UserName: admin
       RabbitMQ__Password: admin123
       RabbitMQ__QueueName: paciente_creado
+      Jwt__Key: "ClaveDemoOAuthJWT_Pacientes_AA2026_Min32Chars!!"
+      Jwt__Issuer: OAuthJWT
+      Jwt__Audience: ServiciosPacientes
     depends_on:
       sql-init:
         condition: service_completed_successfully
@@ -124,9 +151,11 @@ services:
     environment:
       ASPNETCORE_ENVIRONMENT: Development
       ASPNETCORE_URLS: "http://+:8080"
+      ReverseProxy__Clusters__oauthJwtCluster__Destinations__oauthJwtDestination__Address: "http://oauthjwt:8080/"
       ReverseProxy__Clusters__pacientesCluster__Destinations__pacientesDestination__Address: "http://pacientes:8080/"
       ReverseProxy__Clusters__historialClinicoCluster__Destinations__historialClinicoDestination__Address: "http://historialclinico:8080/"
     depends_on:
+      - oauthjwt
       - pacientes
       - historialclinico
     networks:

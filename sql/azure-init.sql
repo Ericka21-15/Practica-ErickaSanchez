@@ -1,0 +1,5 @@
+-- Azure SQL: las bases se crean con az sql db create.
+-- Ejecute por separado (Azure SQL no comparte USE entre bases como SQL Server local):
+--   sql/azure-pacientes.sql   -> database PacientesDB
+--   sql/azure-historial.sql   -> database Historial_ClinicoDB
+-- No versionar contraseñas reales. Use CLAVES_AZURE_EJEMPLO.txt como plantilla.

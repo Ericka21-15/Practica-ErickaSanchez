@@ -1,0 +1,30 @@
+CLAVES Y CREDENCIALES DE EJEMPLO (NO SON SECRETOS REALES DE AZURE)
+
+Use este archivo como plantilla. Genere contraseñas fuertes (mayúsculas, minúsculas, números y caracteres especiales) con un generador confiable. Las claves reales se configuran como variables de entorno / secretos de Container Apps y NO se suben al repositorio público.
+
+--- LOCAL / DOCKER COMPOSE (demostración) ---
+SQL Server SA: SqlServer123!
+usuario_pacientes: 1234
+usuario_historial: 1234
+RabbitMQ: admin / admin123
+JWT Key (demo local): ClaveDemoOAuthJWT_Pacientes_AA2026_Min32Chars!!
+JWT Issuer: OAuthJWT
+JWT Audience: ServiciosPacientes
+JWT ExpireMinutes: 60
+Usuario administrador: admin / Admin1234!
+Usuario estándar: usuario / Usuario1234!
+
+--- PLANTILLA AZURE ---
+Resource Group: rg-aa-pacientes
+Location: eastus
+ACR: <ACR_NAME>.azurecr.io
+Azure SQL Server: <SQL_SERVER_NAME>.database.windows.net
+Azure SQL admin: <SQL_ADMIN_USER>
+Azure SQL password: <SQL_ADMIN_PASSWORD>
+Database 1: PacientesDB
+Database 2: Historial_ClinicoDB
+RabbitMQ user: <RABBITMQ_USER>
+RabbitMQ password: <RABBITMQ_PASSWORD>
+JWT Key Azure: <JWT_KEY_MIN_32_CHARS>
+Auth admin: <AUTH_ADMIN_USER> / <AUTH_ADMIN_PASSWORD>
+Auth user: <AUTH_USER> / <AUTH_USER_PASSWORD>

@@ -1,3 +1,7 @@
+-- Script LOCAL para Docker Compose.
+-- Las contraseñas de este archivo son de demostración local, NO usarlas en Azure.
+-- Para Azure use sql/azure-init.sql con placeholders.
+
 IF DB_ID(N'PacientesDB') IS NULL
 BEGIN
     CREATE DATABASE PacientesDB;
@@ -37,6 +41,15 @@ BEGIN
 END
 GO
 
+IF NOT EXISTS (SELECT 1 FROM dbo.tbl_pacientes)
+BEGIN
+    INSERT INTO dbo.tbl_pacientes (cedula_pac, nombre_pac, apellido_pac, direccion_pac)
+    VALUES 
+        ('1712345678', 'Juan', 'Perez', 'Av. Amazonas y Colon, Quito'),
+        ('1798765432', 'Maria', 'Gomez', 'Av. 10 de Agosto, Quito');
+END
+GO
+
 IF NOT EXISTS (SELECT 1 FROM sys.database_principals WHERE name = N'usuario_pacientes')
 BEGIN
     CREATE USER usuario_pacientes FOR LOGIN usuario_pacientes;
@@ -59,6 +72,15 @@ BEGIN
         tratamiento_pac VARCHAR(100) NOT NULL,
         fecha_his DATETIME NULL
     );
+END
+GO
+
+IF NOT EXISTS (SELECT 1 FROM dbo.tbl_historial_clinico)
+BEGIN
+    INSERT INTO dbo.tbl_historial_clinico (id_pac, num_historia, diagnostico_pac, tratamiento_pac, fecha_his)
+    VALUES 
+        (1, 1001, 'Control preventivo general', 'Reposo e hidratacion', GETDATE()),
+        (2, 1002, 'Rinitis alergica estacional', 'Antihistaminicos por 7 dias', GETDATE());
 END
 GO
 

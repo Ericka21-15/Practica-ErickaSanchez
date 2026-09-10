@@ -1,0 +1,79 @@
+MEMORIA DE COMANDOS AZURE
+Actividad Autónoma - Pacientes / Historial Clínico
+Los valores entre < > son placeholders. No incluir secretos reales en este archivo.
+
+1) Login y verificación
+az login
+az account show
+az account set --subscription <SUBSCRIPTION_ID>
+
+2) Resource Group
+az group create --name rg-aa-pacientes --location eastus
+
+3) Azure Container Registry
+az acr create --resource-group rg-aa-pacientes --name <ACR_NAME> --sku Basic --admin-enabled true
+az acr login --name <ACR_NAME>
+
+4) Construir y publicar imágenes
+# Opción A (con ACR Tasks):
+# az acr build --registry <ACR_NAME> --image oauthjwt:v1 --file OAuthJWT/OAuthJWT/Dockerfile OAuthJWT/OAuthJWT
+# az acr build --registry <ACR_NAME> --image pacientes:v1 --file Pacientes/Pacientes.Api/Dockerfile Pacientes/Pacientes.Api
+# az acr build --registry <ACR_NAME> --image historialclinico:v1 --file Historial_Clinico/Historial_Clinico.Api/Dockerfile Historial_Clinico/Historial_Clinico.Api
+# az acr build --registry <ACR_NAME> --image apigateway:v1 --file ApiGateway/Dockerfile ApiGateway
+
+# Opción B (Docker local + Docker push, estándar para suscripciones estudiantiles):
+az acr login --name <ACR_NAME>
+docker tag practica-dockercompose-pacientes-oauthjwt:latest <ACR_NAME>.azurecr.io/oauthjwt:v1
+docker tag practica-dockercompose-pacientes-pacientes:latest <ACR_NAME>.azurecr.io/pacientes:v1
+docker tag practica-dockercompose-pacientes-historialclinico:latest <ACR_NAME>.azurecr.io/historialclinico:v1
+docker tag practica-dockercompose-pacientes-apigateway:latest <ACR_NAME>.azurecr.io/apigateway:v1
+docker push <ACR_NAME>.azurecr.io/oauthjwt:v1
+docker push <ACR_NAME>.azurecr.io/pacientes:v1
+docker push <ACR_NAME>.azurecr.io/historialclinico:v1
+docker push <ACR_NAME>.azurecr.io/apigateway:v1
+
+5) Azure SQL
+# Nota: Si eastus no tiene cuota de aprovisionamiento de SQL, use una región permitida como centralus:
+az sql server create --name <SQL_SERVER_NAME> --resource-group rg-aa-pacientes --location centralus --admin-user <SQL_ADMIN_USER> --admin-password <SQL_ADMIN_PASSWORD>
+az sql server firewall-rule create --resource-group rg-aa-pacientes --server <SQL_SERVER_NAME> --name AllowAzureServices --start-ip-address 0.0.0.0 --end-ip-address 0.0.0.0
+az sql db create --resource-group rg-aa-pacientes --server <SQL_SERVER_NAME> --name PacientesDB --service-objective Basic --backup-storage-redundancy Local
+az sql db create --resource-group rg-aa-pacientes --server <SQL_SERVER_NAME> --name Historial_ClinicoDB --service-objective Basic --backup-storage-redundancy Local
+sqlcmd -S <SQL_SERVER_NAME>.database.windows.net -d PacientesDB -U <SQL_ADMIN_USER> -P <SQL_ADMIN_PASSWORD> -i sql/azure-pacientes.sql
+sqlcmd -S <SQL_SERVER_NAME>.database.windows.net -d Historial_ClinicoDB -U <SQL_ADMIN_USER> -P <SQL_ADMIN_PASSWORD> -i sql/azure-historial.sql
+
+6) Container Apps Environment
+az containerapp env create --name env-aa-pacientes --resource-group rg-aa-pacientes --location eastus
+
+7) RabbitMQ
+az containerapp create --name rabbitmq --resource-group rg-aa-pacientes --environment env-aa-pacientes --image rabbitmq:4-management --cpu 0.5 --memory 1Gi --min-replicas 1 --max-replicas 1 --ingress internal --target-port 5672 --exposed-port 5672 --transport tcp --env-vars RABBITMQ_DEFAULT_USER=<RABBITMQ_USER> RABBITMQ_DEFAULT_PASS=<RABBITMQ_PASSWORD>
+
+Host interno de RabbitMQ para los microservicios (mismo Container Apps Environment):
+  Hostname: rabbitmq
+  Port: 5672
+
+8) OAuthJWT
+az acr credential show --name <ACR_NAME>
+az containerapp create --name oauthjwt --resource-group rg-aa-pacientes --environment env-aa-pacientes --image <ACR_NAME>.azurecr.io/oauthjwt:v1 --registry-server <ACR_NAME>.azurecr.io --registry-username <ACR_USER> --registry-password <ACR_PASSWORD> --cpu 0.25 --memory 0.5Gi --min-replicas 1 --ingress external --target-port 8080 --env-vars ASPNETCORE_URLS=http://+:8080 Jwt__Key=<JWT_KEY> Jwt__Issuer=OAuthJWT Jwt__Audience=ServiciosPacientes Jwt__ExpireMinutes=60 Auth__AdminUser=<AUTH_ADMIN_USER> Auth__AdminPassword=<AUTH_ADMIN_PASSWORD> Auth__UserName=<AUTH_USER> Auth__UserPassword=<AUTH_USER_PASSWORD>
+
+9) Pacientes
+az containerapp create --name pacientes --resource-group rg-aa-pacientes --environment env-aa-pacientes --image <ACR_NAME>.azurecr.io/pacientes:v1 --registry-server <ACR_NAME>.azurecr.io --registry-username <ACR_USER> --registry-password <ACR_PASSWORD> --cpu 0.25 --memory 0.5Gi --min-replicas 1 --ingress external --target-port 8080 --env-vars ASPNETCORE_URLS=http://+:8080 ConnectionStrings__PacientesConnection="Server=tcp:<SQL_SERVER_NAME>.database.windows.net,1433;Initial Catalog=PacientesDB;User ID=<SQL_ADMIN_USER>;Password=<SQL_ADMIN_PASSWORD>;Encrypt=True;TrustServerCertificate=False;" RabbitMQ__HostName=rabbitmq RabbitMQ__Port=5672 RabbitMQ__UserName=<RABBITMQ_USER> RabbitMQ__Password=<RABBITMQ_PASSWORD> RabbitMQ__QueueName=paciente_creado Jwt__Key=<JWT_KEY> Jwt__Issuer=OAuthJWT Jwt__Audience=ServiciosPacientes
+
+10) Historial clínico
+az containerapp create --name historialclinico --resource-group rg-aa-pacientes --environment env-aa-pacientes --image <ACR_NAME>.azurecr.io/historialclinico:v1 --registry-server <ACR_NAME>.azurecr.io --registry-username <ACR_USER> --registry-password <ACR_PASSWORD> --cpu 0.25 --memory 0.5Gi --min-replicas 1 --ingress external --target-port 8080 --env-vars ASPNETCORE_URLS=http://+:8080 ConnectionStrings__HistorialClinicoConnection="Server=tcp:<SQL_SERVER_NAME>.database.windows.net,1433;Initial Catalog=Historial_ClinicoDB;User ID=<SQL_ADMIN_USER>;Password=<SQL_ADMIN_PASSWORD>;Encrypt=True;TrustServerCertificate=False;" RabbitMQ__HostName=rabbitmq RabbitMQ__Port=5672 RabbitMQ__UserName=<RABBITMQ_USER> RabbitMQ__Password=<RABBITMQ_PASSWORD> RabbitMQ__QueueName=paciente_creado Jwt__Key=<JWT_KEY> Jwt__Issuer=OAuthJWT Jwt__Audience=ServiciosPacientes
+
+11) API Gateway
+Obtener FQDN internos HTTP de los tres APIs (mismo environment, nombre de app):
+  http://oauthjwt
+  http://pacientes
+  http://historialclinico
+
+az containerapp create --name apigateway --resource-group rg-aa-pacientes --environment env-aa-pacientes --image <ACR_NAME>.azurecr.io/apigateway:v1 --registry-server <ACR_NAME>.azurecr.io --registry-username <ACR_USER> --registry-password <ACR_PASSWORD> --cpu 0.25 --memory 0.5Gi --min-replicas 1 --ingress external --target-port 8080 --env-vars ASPNETCORE_URLS=http://+:8080 ReverseProxy__Clusters__oauthJwtCluster__Destinations__oauthJwtDestination__Address=http://oauthjwt ReverseProxy__Clusters__pacientesCluster__Destinations__pacientesDestination__Address=http://pacientes ReverseProxy__Clusters__historialClinicoCluster__Destinations__historialClinicoDestination__Address=http://historialclinico
+
+12) Pruebas públicas (reemplazar FQDN del gateway)
+curl https://<APIGATEWAY_FQDN>/health
+curl -i https://<APIGATEWAY_FQDN>/api/pacientes
+curl -X POST https://<APIGATEWAY_FQDN>/api/Auth/Login -H "Content-Type: application/json" -d "{\"usuario\":\"<AUTH_ADMIN_USER>\",\"password\":\"<AUTH_ADMIN_PASSWORD>\"}"
+curl https://<APIGATEWAY_FQDN>/api/pacientes -H "Authorization: Bearer <TOKEN>"
+
+13) Eliminación después del 13/09/2026
+az group delete --name rg-aa-pacientes --yes --no-wait
