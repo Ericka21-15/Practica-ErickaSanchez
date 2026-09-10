@@ -50,10 +50,9 @@ OAuthJWT es un servicio **independiente**. Los microservicios de negocio **no em
 | :---: | :--- | :--- | :--- |
 | **1** | **Enlace de GitHub** | [Repositorio en GitHub](https://github.com/Ericka21-15/Practica-ErickaSanchez) | Repositorio completo con los 5 servicios, Docker Compose, SQL y configs. |
 | **2** | **README.md** | `README.md` | Arquitectura, Docker Compose, pruebas JWT, URLs de Azure y eliminación. |
-| **3** | **Video de demostración (máx 5 min)** | [GUIA_GRABACION_VIDEO.md](./GUIA_GRABACION_VIDEO.md) | Guion y checklist de demostración en Azure (autenticación, API Gateway, RabbitMQ). |
-| **4** | **Scripts de base de datos** | `sql/init.sql`, `sql/azure-pacientes.sql`, `sql/azure-historial.sql`, `sql/azure-init.sql` | Scripts DDL y datos de prueba para SQL Server local y Azure SQL sin secretos. |
-| **5** | **Credenciales de ejemplo** | `CLAVES_AZURE_EJEMPLO.txt` | Estructura de credenciales y placeholders según políticas de seguridad. |
-| **6** | **Memoria de comandos de Azure** | `MEMORIA_COMANDOS_AZURE.txt` | Secuencia ordenada de comandos de Azure CLI (Login, RG, ACR, SQL, ACA, pruebas, borrado). |
+| **3** | **Scripts de base de datos** | `sql/init.sql`, `sql/azure-pacientes.sql`, `sql/azure-historial.sql`, `sql/azure-init.sql` | Scripts DDL y datos de prueba para SQL Server local y Azure SQL sin secretos. |
+| **4** | **Credenciales de ejemplo** | `CLAVES_AZURE_EJEMPLO.txt` | Estructura de credenciales y placeholders según políticas de seguridad. |
+| **5** | **Memoria de comandos de Azure** | `MEMORIA_COMANDOS_AZURE.txt` | Secuencia ordenada de comandos de Azure CLI (Login, RG, ACR, SQL, ACA, pruebas, borrado). |
 
 
 ## Requisitos locales
